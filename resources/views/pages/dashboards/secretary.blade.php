@@ -11,19 +11,6 @@
                         <h1 class="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">Welcome back, {{ Auth::user()->name }}.</h1>
                         <p class="text-base leading-8 text-slate-600">Manage meetings, communication, and member coordination from one organized workspace.</p>
                     </div>
-                </div>
-                        <span class="text-sm text-slate-500">{{ $today }}</span>
-                    </div>
-
-                    <div class="max-w-3xl space-y-4">
-                        <h1 class="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-                            Welcome back, {{ Auth::user()->name }}.
-                        </h1>
-                        <p class="text-base leading-8 text-slate-600">
-                            Manage meetings, communication, and member coordination from one organized workspace.
-                        </p>
-                    </div>
-
                     <div class="flex flex-wrap gap-3">
                         <x-button href="{{ route('meetings') }}" icon="fa-calendar-days">Plan meeting</x-button>
                         <x-button href="{{ route('members') }}" variant="secondary" icon="fa-users">View members</x-button>
@@ -32,17 +19,17 @@
                 </div>
 
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                    <x-stat-card title="Upcoming meetings" value="—" subtitle="Calendar overview" icon="fa-calendar-days" tone="emerald" />
-                    <x-stat-card title="Member notices" value="—" subtitle="Communication queue" icon="fa-bell" tone="blue" />
+                    <x-stat-card title="Upcoming meetings" :value="$meetings_count" subtitle="Calendar overview" icon="fa-calendar-days" tone="emerald" />
+                    <x-stat-card title="Member notices" :value="$notifications_count" subtitle="Communication queue" icon="fa-bell" tone="blue" />
                 </div>
             </div>
         </section>
 
         <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            <x-stat-card title="Members" value="—" subtitle="Directory management" icon="fa-users" tone="slate" />
-            <x-stat-card title="Meetings" value="—" subtitle="Upcoming sessions" icon="fa-calendar-days" tone="emerald" />
-            <x-stat-card title="Reports" value="—" subtitle="Records ready to review" icon="fa-chart-pie" tone="gold" />
-            <x-stat-card title="Notifications" value="—" subtitle="Messages to send" icon="fa-bell" tone="blue" />
+            <x-stat-card title="Members" :value="$members_count" subtitle="Directory management" icon="fa-users" tone="slate" />
+            <x-stat-card title="Meetings" :value="$meetings_count" subtitle="Upcoming sessions" icon="fa-calendar-days" tone="emerald" />
+            <x-stat-card title="Reports" :value="$reports_count" subtitle="Records ready to review" icon="fa-chart-pie" tone="gold" />
+            <x-stat-card title="Notifications" :value="$notifications_count" subtitle="Messages to send" icon="fa-bell" tone="blue" />
         </section>
 
         <section class="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
@@ -56,11 +43,19 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 bg-white">
-                        <tr>
-                            <td colspan="3" class="px-6 py-10 text-center text-sm text-slate-500">
-                                No meetings scheduled yet.
-                            </td>
-                        </tr>
+                        @forelse ($upcoming_meetings as $meeting)
+                            <tr>
+                                <td>{{ $meeting->meeting_date->format('M d') }} at {{ $meeting->meeting_time }}</td>
+                                <td>{{ $meeting->title }}</td>
+                                <td>{{ $meeting->location }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="px-6 py-10 text-center text-sm text-slate-500">
+                                    No meetings scheduled yet.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </x-table-card>

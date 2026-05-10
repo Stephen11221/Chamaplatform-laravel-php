@@ -3,6 +3,10 @@
 use App\Http\Controllers\MembersController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ContributionsController;
+use App\Http\Controllers\LoansController;
+use App\Http\Controllers\MeetingsController;
+use App\Http\Controllers\InvestmentsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -18,7 +22,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/loans', [LoansController::class, 'index'])->name('loans');
     Route::post('/loans', [LoansController::class, 'store'])->name('loans.store');
     Route::post('/loans/{loan}/approve', [LoansController::class, 'approve'])->name('loans.approve');
-    Route::view('/investments', 'pages.investments.index')->name('investments');
+    Route::get('/investments', [InvestmentsController::class, 'index'])->name('investments');
+    Route::post('/investments', [InvestmentsController::class, 'store'])->name('investments.store');
+    Route::patch('/investments/{investment}', [InvestmentsController::class, 'update'])->name('investments.update');
+    Route::delete('/investments/{investment}', [InvestmentsController::class, 'destroy'])->name('investments.destroy');
+    Route::post('/investments/{investment}/vote', [InvestmentsController::class, 'vote'])->name('investments.vote');
     Route::view('/reports', 'pages.reports.index')->name('reports');
     Route::get('/meetings', [MeetingsController::class, 'index'])->name('meetings');
     Route::post('/meetings', [MeetingsController::class, 'store'])->name('meetings.store');

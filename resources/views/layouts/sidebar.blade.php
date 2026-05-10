@@ -9,7 +9,6 @@
         ->implode('');
     $photo = $user->profile_photo ? asset('storage/'.$user->profile_photo) : null;
 
-    $navigation = [
     $sectionsByRole = [
         'admin' => [
             [
@@ -23,8 +22,6 @@
                 'items' => [
                     ['label' => 'Members', 'route' => 'members', 'icon' => 'fa-users', 'active' => 'members'],
                     ['label' => 'Meetings', 'route' => 'meetings', 'icon' => 'fa-calendar-days', 'active' => 'meetings'],
-                    ['label' => 'Contributions', 'route' => 'contributions', 'icon' => 'fa-wallet', 'active' => 'contributions'],
-                    ['label' => 'Loans', 'route' => 'loans', 'icon' => 'fa-hand-holding-dollar', 'active' => 'loans'],
                     ['label' => 'Contributions', 'route' => 'contributions', 'icon' => 'fa-wallet', 'active' => 'contributions'],
                     ['label' => 'Loans', 'route' => 'loans', 'icon' => 'fa-hand-holding-dollar', 'active' => 'loans'],
                     ['label' => 'Investments', 'route' => 'investments', 'icon' => 'fa-building-columns', 'active' => 'investments'],
@@ -64,13 +61,6 @@
                 'items' => [
                     ['label' => 'Meetings', 'route' => 'meetings', 'icon' => 'fa-calendar-days', 'active' => 'meetings'],
                     ['label' => 'Notifications', 'route' => 'notifications', 'icon' => 'fa-bell', 'active' => 'notifications'],
-                    ['label' => 'Profile', 'route' => 'profile.edit', 'icon' => 'fa-user-gear', 'active' => 'profile.*'],
-                    ['label' => 'Settings', 'route' => 'settings', 'icon' => 'fa-gears', 'active' => 'settings'],
-                'title' => 'Team',
-                'items' => [
-                    ['label' => 'Members', 'route' => 'members', 'icon' => 'fa-users', 'active' => 'members'],
-                    ['label' => 'Meetings', 'route' => 'meetings', 'icon' => 'fa-calendar-days', 'active' => 'meetings'],
-                    ['label' => 'Notifications', 'route' => 'notifications', 'icon' => 'fa-bell', 'active' => 'notifications'],
                 ],
             ],
             [
@@ -89,10 +79,6 @@
                     ['label' => 'Members', 'route' => 'members', 'icon' => 'fa-users', 'active' => 'members'],
                     ['label' => 'Notifications', 'route' => 'notifications', 'icon' => 'fa-bell', 'active' => 'notifications'],
                     ['label' => 'Reports', 'route' => 'reports', 'icon' => 'fa-chart-pie', 'active' => 'reports'],
-                    ['label' => 'Members', 'route' => 'members', 'icon' => 'fa-users', 'active' => 'members'],
-                    ['label' => 'Meetings', 'route' => 'meetings', 'icon' => 'fa-calendar-days', 'active' => 'meetings'],
-                    ['label' => 'Reports', 'route' => 'reports', 'icon' => 'fa-chart-pie', 'active' => 'reports'],
-                    ['label' => 'Notifications', 'route' => 'notifications', 'icon' => 'fa-bell', 'active' => 'notifications'],
                 ],
             ],
             [
@@ -105,7 +91,6 @@
         ],
         'member' => [
             [
-                'title' => 'My Space',
                 'title' => 'Member Space',
                 'items' => [
                     ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'fa-chart-line', 'active' => 'dashboard'],
@@ -125,9 +110,13 @@
         ],
     ];
 
-    $sections = $navigation[$role] ?? $navigation['member'];
-    $roleLabel = match ($role) {
     $sections = $sectionsByRole[$role] ?? $sectionsByRole['member'];
+    $roleLabel = match ($role) {
+        'admin' => 'Administrator',
+        'treasurer' => 'Treasurer',
+        'secretary' => 'Secretary',
+        default => 'Member',
+    };
     $heroTitle = match ($role) {
         'admin' => 'Admin console',
         'treasurer' => 'Treasury desk',
@@ -139,6 +128,7 @@
         'treasurer' => 'Money movement, reconciliations, and treasury reporting.',
         'secretary' => 'Meetings, member coordination, and communication.',
         default => 'Your contributions, loans, payments, and updates.',
+    };
     $heroSubtitle = match ($role) {
         'admin' => 'Govern the platform, manage users, and monitor operations.',
         'treasurer' => 'Track collections, payments, and loan performance.',
@@ -192,9 +182,6 @@
                     @foreach ($sections as $section)
                         <div>
                             <p class="px-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ $section['title'] }}</p>
-                            <p class="px-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                                {{ $section['title'] }}
-                            </p>
 
                             <nav class="mt-2 space-y-2">
                                 @foreach ($section['items'] as $item)

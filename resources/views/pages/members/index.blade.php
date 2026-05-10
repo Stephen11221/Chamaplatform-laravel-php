@@ -8,7 +8,9 @@
                     <p class="text-sm leading-7 text-slate-600">Create member login accounts, track roles, and keep all member records in the same secure user table.</p>
                 </div>
 
-                <x-button icon="fa-user-plus" x-on:click="openCreateModal = true">Add member</x-button>
+                @if(Auth::user()->role?->role_name === 'Admin')
+                    <x-button icon="fa-user-plus" x-on:click="openCreateModal = true">Add member</x-button>
+                @endif
             </div>
         </section>
 
@@ -98,6 +100,7 @@
             </div>
         </section>
 
+        @if(Auth::user()->role?->role_name === 'Admin')
         <x-modal open="openCreateModal" title="Create member account" maxWidth="2xl">
             <form method="POST" action="{{ route('members.store') }}" class="grid gap-5 sm:grid-cols-2">
                 @csrf
@@ -159,5 +162,6 @@
                 </div>
             </form>
         </x-modal>
+        @endif
     </div>
 </x-app-layout>
