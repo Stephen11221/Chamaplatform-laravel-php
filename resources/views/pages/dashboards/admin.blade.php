@@ -25,17 +25,17 @@
                 </div>
 
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                    <x-stat-card title="Platform coverage" value="All modules" subtitle="Admin visibility across the system" icon="fa-layer-group" tone="emerald" />
-                    <x-stat-card title="Risk posture" value="Stable" subtitle="Track anomalies and permissions" icon="fa-triangle-exclamation" tone="gold" />
+                    <x-stat-card title="Total balance" :value="$total_balance" subtitle="Paid contributions plus investment value" icon="fa-coins" tone="emerald" />
+                    <x-stat-card title="Pending loans" :value="$pending_loans_count" subtitle="Applications awaiting review" icon="fa-triangle-exclamation" tone="gold" />
                 </div>
             </div>
         </section>
 
         <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            <x-stat-card title="Members" value="—" subtitle="User administration" icon="fa-users" tone="blue" />
-            <x-stat-card title="Contributions" value="—" subtitle="Collections overview" icon="fa-wallet" tone="emerald" />
-            <x-stat-card title="Loans" value="—" subtitle="Credit performance" icon="fa-hand-holding-dollar" tone="slate" />
-            <x-stat-card title="Audit events" value="—" subtitle="Track system changes" icon="fa-shield-halved" tone="gold" />
+            <x-stat-card title="Members" :value="$members_count" subtitle="{{ $active_members_count }} active accounts" icon="fa-users" tone="blue" />
+            <x-stat-card title="Contributions" :value="$contributions_total" subtitle="{{ $monthly_contributions_total }} this month" icon="fa-wallet" tone="emerald" />
+            <x-stat-card title="Loans" :value="$loans_count" subtitle="{{ $active_loans_count }} active loans" icon="fa-hand-holding-dollar" tone="slate" />
+            <x-stat-card title="Investments" :value="$investments_total" subtitle="Current investment book" icon="fa-building-columns" tone="gold" />
         </section>
 
         <section class="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
@@ -50,11 +50,20 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 bg-white">
-                        <tr>
-                            <td colspan="4" class="px-6 py-10 text-center text-sm text-slate-500">
-                                No recent audit data yet. Connect your logs to populate this feed.
-                            </td>
-                        </tr>
+                        @forelse ($recent_activity as $activity)
+                            <tr>
+                                <td>{{ ucfirst($activity->module) }}</td>
+                                <td>{{ $activity->activity }}</td>
+                                <td>{{ $activity->actor ?? 'System' }}</td>
+                                <td>Recorded</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-6 py-10 text-center text-sm text-slate-500">
+                                    No recent audit data yet.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </x-table-card>
@@ -64,8 +73,8 @@
                     <div class="h-[260px]">
                         <div class="flex h-full items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 text-center">
                             <div>
-                                <p class="text-sm font-semibold text-slate-900">Monitoring ready</p>
-                                <p class="mt-1 text-sm text-slate-500">Wire in metrics for uptime, queue health, and sync status.</p>
+                                <p class="text-sm font-semibold text-slate-900">{{ $audit_events_count }} audit events recorded</p>
+                                <p class="mt-1 text-sm text-slate-500">{{ $pending_loans_count }} loans currently need admin review.</p>
                             </div>
                         </div>
                     </div>

@@ -32,7 +32,6 @@
                 'title' => 'Insights',
                 'items' => [
                     ['label' => 'Reports', 'route' => 'reports', 'icon' => 'fa-chart-pie', 'active' => 'reports'],
-                    ['label' => 'Meetings', 'route' => 'meetings', 'icon' => 'fa-calendar-days', 'active' => 'meetings'],
                     ['label' => 'Notifications', 'route' => 'notifications', 'icon' => 'fa-bell', 'active' => 'notifications'],
                     ['label' => 'Audit Logs', 'route' => 'audit', 'icon' => 'fa-shield-halved', 'active' => 'audit'],
                 ],
@@ -174,8 +173,7 @@
                             <p class="text-xs text-slate-300">{{ $user->role?->role_name ?? 'Member' }}</p>
                         </div>
                     </div>
-                    <p class="mt-4 text-sm text-slate-300">{{ $roleCopy }}</p>
-                    <p class="mt-4 text-sm text-slate-300">{{ $heroSubtitle }}</p>
+                    <p class="mt-4 text-sm leading-6 text-slate-300">{{ $roleCopy }}</p>
                 </div>
 
                 <div class="mt-5 space-y-5">
@@ -236,18 +234,13 @@
                         <p class="text-xs text-slate-300">{{ $user->role?->role_name ?? 'Member' }}</p>
                     </div>
                 </div>
-                <p class="mt-4 text-sm text-slate-300">{{ $roleCopy }}</p>
-                <p class="mt-4 text-sm text-slate-300">{{ $heroSubtitle }}</p>
+                <p class="mt-4 text-sm leading-6 text-slate-300">{{ $roleCopy }}</p>
             </div>
 
             <div class="mt-6 space-y-5">
                 @foreach ($sections as $section)
                     <div>
                         <p class="px-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ $section['title'] }}</p>
-                        <p class="px-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                            {{ $section['title'] }}
-                        </p>
-
                         <nav class="mt-2 space-y-2">
                             @foreach ($section['items'] as $item)
                                 <a href="{{ route($item['route']) }}" class="sidebar-link {{ request()->routeIs($item['active']) ? 'sidebar-link-active' : '' }}">
@@ -265,9 +258,7 @@
             <div class="rounded-[1.5rem] border border-emerald-400/20 bg-emerald-500/10 p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-100">Workspace</p>
                 <p class="mt-2 text-lg font-semibold text-white">{{ $roleLabel }}</p>
-                <p class="mt-1 text-sm text-slate-300">{{ $roleCopy }}</p>
-                <p class="mt-2 text-lg font-semibold text-white">{{ $heroTitle }}</p>
-                <p class="mt-1 text-sm text-slate-300">{{ $heroSubtitle }}</p>
+                <p class="mt-1 text-sm leading-6 text-slate-300">{{ $heroSubtitle }}</p>
             </div>
             <form method="POST" action="{{ route('logout') }}" class="mt-4">
                 @csrf

@@ -20,16 +20,16 @@
 
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
                     <x-stat-card title="Upcoming meetings" :value="$meetings_count" subtitle="Calendar overview" icon="fa-calendar-days" tone="emerald" />
-                    <x-stat-card title="Member notices" :value="$notifications_count" subtitle="Communication queue" icon="fa-bell" tone="blue" />
+                    <x-stat-card title="Unread notices" :value="$unread_notifications_count" subtitle="Communication queue" icon="fa-bell" tone="blue" />
                 </div>
             </div>
         </section>
 
         <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            <x-stat-card title="Members" :value="$members_count" subtitle="Directory management" icon="fa-users" tone="slate" />
-            <x-stat-card title="Meetings" :value="$meetings_count" subtitle="Upcoming sessions" icon="fa-calendar-days" tone="emerald" />
+            <x-stat-card title="Members" :value="$members_count" subtitle="{{ $active_members_count }} active accounts" icon="fa-users" tone="slate" />
+            <x-stat-card title="Meetings" :value="$meetings_count" subtitle="{{ $meetings_this_month_count }} this month" icon="fa-calendar-days" tone="emerald" />
             <x-stat-card title="Reports" :value="$reports_count" subtitle="Records ready to review" icon="fa-chart-pie" tone="gold" />
-            <x-stat-card title="Notifications" :value="$notifications_count" subtitle="Messages to send" icon="fa-bell" tone="blue" />
+            <x-stat-card title="Notifications" :value="$notifications_count" subtitle="{{ $unread_notifications_count }} unread" icon="fa-bell" tone="blue" />
         </section>
 
         <section class="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
@@ -61,16 +61,32 @@
             </x-table-card>
 
             <div class="space-y-6">
-                <x-chart-card title="Communication" subtitle="Announcements and reminders">
-                    <div class="h-[260px]">
-                        <div class="flex h-full items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 text-center">
-                            <div>
-                                <p class="text-sm font-semibold text-slate-900">No communication chart yet</p>
-                                <p class="mt-1 text-sm text-slate-500">Connect messaging stats for response tracking.</p>
-                            </div>
-                        </div>
-                    </div>
-                </x-chart-card>
+                <x-table-card title="Recent notices" subtitle="Latest member communications">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Notice</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 bg-white">
+                            @forelse ($latest_notifications as $notification)
+                                <tr>
+                                    <td>{{ $notification->member_name ?? 'Member' }}</td>
+                                    <td>{{ $notification->title }}</td>
+                                    <td>{{ $notification->is_read ? 'Read' : 'Unread' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="px-6 py-10 text-center text-sm text-slate-500">
+                                        No notices have been sent yet.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </x-table-card>
 
                 <div class="premium-card-muted p-6">
                     <p class="section-label">Secretary focus</p>
