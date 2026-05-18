@@ -30,7 +30,7 @@
                     </div>
 
                     <div class="flex flex-wrap gap-3">
-                        <x-button icon="fa-receipt" x-on:click="makePayment = true">Make payment</x-button>
+                        <x-button href="{{ route('payments', ['make_payment' => 1]) }}" icon="fa-receipt">Make payment</x-button>
                         <x-button href="{{ route('contributions') }}" icon="fa-wallet">View contributions</x-button>
                         <x-button href="{{ route('payments') }}" variant="secondary" icon="fa-list-check">Payment history</x-button>
                         <x-button href="{{ route('loans') }}" variant="dark" icon="fa-hand-holding-dollar">Loan status</x-button>
