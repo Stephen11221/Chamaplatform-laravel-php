@@ -171,6 +171,7 @@ class DashboardController extends Controller
             ]);
 
         $loanActivities = Loan::where('user_id', $userId)
+            ->where('approval_status', 'pending')
             ->orderByDesc('created_at')
             ->limit(3)
             ->get()
@@ -199,6 +200,11 @@ class DashboardController extends Controller
             'my_payments_count' => DB::table('payments')->where('user_id', $userId)->whereNull('deleted_at')->count(),
             'my_meetings_count' => Meeting::where('meeting_date', '>=', today())->count(),
             'my_notifications_count' => DB::table('notifications')->where('user_id', $userId)->where('is_read', false)->count(),
+            'payable_loans' => Loan::where('user_id', $userId)
+                ->where('approval_status', 'approved')
+                ->where('repayment_status', 'active')
+                ->orderByDesc('created_at')
+                ->get(),
             'recent_personal_activity' => $contributionActivities
                 ->concat($loanActivities)
                 ->concat($paymentActivities)

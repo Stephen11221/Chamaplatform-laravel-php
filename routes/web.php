@@ -7,6 +7,7 @@ use App\Http\Controllers\ContributionsController;
 use App\Http\Controllers\LoansController;
 use App\Http\Controllers\MeetingsController;
 use App\Http\Controllers\InvestmentsController;
+use App\Http\Controllers\PaymentsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -22,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/loans', [LoansController::class, 'index'])->name('loans');
     Route::post('/loans', [LoansController::class, 'store'])->name('loans.store');
     Route::post('/loans/{loan}/approve', [LoansController::class, 'approve'])->name('loans.approve');
+    Route::post('/loan-repayments/{repayment}/verify', [LoansController::class, 'verifyRepayment'])->name('loan-repayments.verify');
     Route::get('/investments', [InvestmentsController::class, 'index'])->name('investments');
     Route::post('/investments', [InvestmentsController::class, 'store'])->name('investments.store');
     Route::patch('/investments/{investment}', [InvestmentsController::class, 'update'])->name('investments.update');
@@ -31,7 +33,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/meetings', [MeetingsController::class, 'index'])->name('meetings');
     Route::post('/meetings', [MeetingsController::class, 'store'])->name('meetings.store');
     Route::post('/meetings/{meeting}/reply', [MeetingsController::class, 'reply'])->name('meetings.reply');
-    Route::view('/payments', 'pages.payments.index')->name('payments');
+    Route::get('/payments', [PaymentsController::class, 'index'])->name('payments');
+    Route::post('/payments', [PaymentsController::class, 'store'])->name('payments.store');
     Route::view('/settings', 'pages.settings.index')->name('settings');
     Route::view('/notifications', 'pages.notifications.index')->name('notifications');
     Route::view('/audit', 'pages.audit.index')->name('audit');

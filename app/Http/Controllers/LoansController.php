@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Loan;
 use App\Models\LoanApproval;
+use App\Models\LoanRepayment;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,13 +18,24 @@ class LoansController extends Controller
     public function index(): View
     {
         $role = strtolower(Auth::user()->role?->role_name ?? 'member');
+        $isTreasuryStaff = in_array($role, ['admin', 'treasurer'], true);
 
         $loans = Loan::query()
             ->with(['borrower', 'guarantor', 'approvals.approver', 'approver'])
             ->withCount('approvals')
-            ->when(! in_array($role, ['admin', 'treasurer'], true), fn ($query) => $query->where('user_id', Auth::id()))
+            ->when(! $isTreasuryStaff, fn ($query) => $query
+                ->where('user_id', Auth::id())
+                ->where('approval_status', 'pending'))
             ->orderByDesc('created_at')
             ->get();
+
+        $pendingRepayments = $isTreasuryStaff
+            ? LoanRepayment::with(['loan', 'member'])
+                ->where('status', 'pending')
+                ->orderByDesc('payment_date')
+                ->orderByDesc('created_at')
+                ->get()
+            : collect();
 
         $members = User::with('role')
             ->orderBy('full_name')
@@ -31,7 +44,8 @@ class LoansController extends Controller
         return view('pages.loans.index', [
             'loans' => $loans,
             'members' => $members,
-            'isTreasuryStaff' => in_array($role, ['admin', 'treasurer'], true),
+            'isTreasuryStaff' => $isTreasuryStaff,
+            'pendingRepayments' => $pendingRepayments,
         ]);
     }
 
@@ -94,5 +108,32 @@ class LoansController extends Controller
         }
 
         return redirect()->route('loans', ['loan' => $loan->id])->with('success', $approvalsCount >= 2 ? 'Loan approved.' : 'Approval recorded.');
+    }
+
+    public function verifyRepayment(LoanRepayment $repayment): RedirectResponse
+    {
+        $role = strtolower(Auth::user()->role?->role_name ?? '');
+        abort_unless(in_array($role, ['admin', 'treasurer'], true), 403);
+        abort_unless($repayment->status === 'pending', 422, 'This repayment has already been processed.');
+
+        $repayment->load('loan');
+        $repayment->update([
+            'status' => 'completed',
+            'recorded_by' => Auth::id(),
+        ]);
+
+        Payment::where('reference_number', $repayment->reference_number)
+            ->where('category', 'loan_repayment')
+            ->update(['status' => 'completed', 'recorded_by' => Auth::id()]);
+
+        $completedTotal = LoanRepayment::where('loan_id', $repayment->loan_id)
+            ->where('status', 'completed')
+            ->sum('amount_paid');
+
+        if ($repayment->loan && $completedTotal >= (float) $repayment->loan->total_repayable) {
+            $repayment->loan->update(['repayment_status' => 'completed']);
+        }
+
+        return redirect()->route('loans')->with('success', 'Cash loan repayment verified.');
     }
 }

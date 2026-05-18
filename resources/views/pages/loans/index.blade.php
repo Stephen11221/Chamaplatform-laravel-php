@@ -25,13 +25,19 @@
         }"
         class="space-y-8"
     >
+        @if (session('success'))
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
         <section class="premium-card px-6 py-8 lg:px-8">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div class="max-w-3xl space-y-3">
                     <p class="section-label">Loans</p>
-                    <h1 class="section-heading">Loan portfolio management</h1>
+                    <h1 class="section-heading">{{ $isTreasuryStaff ? 'Loan portfolio management' : 'Pending loan requests' }}</h1>
                     <p class="text-sm leading-7 text-slate-600">
-                        Members can apply for loans up to KES 50,000. Treasurer and Admin approvals count toward final approval.
+                        {{ $isTreasuryStaff ? 'Members can apply for loans up to KES 50,000. Treasurer and Admin approvals count toward final approval.' : 'You can only view loan applications that are still pending review.' }}
                     </p>
                 </div>
                 <x-button icon="fa-hand-holding-dollar" x-on:click="applyLoan = true">
@@ -41,11 +47,51 @@
         </section>
 
         <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            <x-stat-card title="Active Loans" value="{{ $loans->where('repayment_status', 'active')->count() }}" subtitle="Current portfolio" icon="fa-hand-holding-dollar" tone="emerald" />
-            <x-stat-card title="Outstanding Balance" value="KES {{ number_format($loans->sum(fn ($loan) => (float) $loan->total_repayable), 2) }}" subtitle="Approved and active exposure" icon="fa-scale-balanced" tone="blue" />
-            <x-stat-card title="Repayment Rate" value="{{ $loans->count() ? round(($loans->where('repayment_status', 'completed')->count() / $loans->count()) * 100) : 0 }}%" subtitle="Completed loans" icon="fa-arrow-trend-up" tone="gold" />
+            <x-stat-card title="{{ $isTreasuryStaff ? 'Active Loans' : 'Pending Loans' }}" value="{{ $isTreasuryStaff ? $loans->where('repayment_status', 'active')->count() : $loans->count() }}" subtitle="{{ $isTreasuryStaff ? 'Current portfolio' : 'Your applications in review' }}" icon="fa-hand-holding-dollar" tone="emerald" />
+            <x-stat-card title="{{ $isTreasuryStaff ? 'Outstanding Balance' : 'Requested Amount' }}" value="KES {{ number_format($loans->sum(fn ($loan) => (float) ($isTreasuryStaff ? $loan->total_repayable : $loan->loan_amount)), 2) }}" subtitle="{{ $isTreasuryStaff ? 'Approved and active exposure' : 'Total pending principal' }}" icon="fa-scale-balanced" tone="blue" />
+            <x-stat-card title="{{ $isTreasuryStaff ? 'Repayment Rate' : 'Approval Progress' }}" value="{{ $isTreasuryStaff ? ($loans->count() ? round(($loans->where('repayment_status', 'completed')->count() / $loans->count()) * 100) : 0).'%' : ($loans->count() ? round(($loans->sum('approvals_count') / ($loans->count() * 2)) * 100) : 0).'%' }}" subtitle="{{ $isTreasuryStaff ? 'Completed loans' : 'Average pending approval progress' }}" icon="fa-arrow-trend-up" tone="gold" />
             <x-stat-card title="Pending Requests" value="{{ $loans->where('approval_status', 'pending')->count() }}" subtitle="Awaiting approvals" icon="fa-clipboard-list" tone="slate" />
         </section>
+
+        @if ($isTreasuryStaff)
+            <x-table-card title="Cash loan repayments" subtitle="Pending member cash repayments awaiting verification">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Loan</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Reference</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 bg-white">
+                        @forelse ($pendingRepayments as $repayment)
+                            <tr>
+                                <td>{{ $repayment->member?->name ?? 'Member' }}</td>
+                                <td>{{ $repayment->loan?->purpose ?? 'Loan repayment' }}</td>
+                                <td class="font-semibold text-slate-900">KES {{ number_format((float) $repayment->amount_paid, 2) }}</td>
+                                <td>{{ optional($repayment->payment_date)->format('Y-m-d') }}</td>
+                                <td>{{ $repayment->reference_number }}</td>
+                                <td>
+                                    <form method="POST" action="{{ route('loan-repayments.verify', $repayment) }}">
+                                        @csrf
+                                        <x-button type="submit" variant="secondary" icon="fa-check">Verify cash</x-button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-10 text-center text-sm text-slate-500">
+                                    No cash loan repayments are waiting for verification.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </x-table-card>
+        @endif
 
         <section class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             <x-chart-card title="Loan approval progress" subtitle="Track how many approvals each request has gathered">
@@ -92,7 +138,7 @@
             </div>
         </section>
 
-        <x-table-card title="Loan applications" subtitle="All applications and approval progress">
+        <x-table-card title="Loan applications" subtitle="{{ $isTreasuryStaff ? 'All applications and approval progress' : 'Your pending applications and approval progress' }}">
             <table class="premium-table">
                 <thead>
                     <tr>
