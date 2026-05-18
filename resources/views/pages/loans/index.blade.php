@@ -171,10 +171,14 @@
                             </td>
                             <td>
                                 @if ($isTreasuryStaff && $loan->approval_status === 'pending')
-                                    <form method="POST" action="{{ route('loans.approve', $loan) }}">
-                                        @csrf
-                                        <x-button type="submit" variant="secondary" icon="fa-check">Approve</x-button>
-                                    </form>
+                                    @if (! $loan->approvals->contains('user_id', Auth::id()))
+                                        <form method="POST" action="{{ route('loans.approve', $loan) }}">
+                                            @csrf
+                                            <x-button type="submit" variant="secondary" icon="fa-check">Approve</x-button>
+                                        </form>
+                                    @else
+                                        <span class="text-sm text-slate-500">You already approved</span>
+                                    @endif
                                 @else
                                     <span class="text-sm text-slate-500">
                                         {{ $loan->approval_status === 'approved' ? 'Approved' : 'Waiting for review' }}

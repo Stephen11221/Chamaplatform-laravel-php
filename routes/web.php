@@ -18,6 +18,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/members', [MembersController::class, 'index'])->name('members');
     Route::post('/members', [MembersController::class, 'store'])->name('members.store');
+    Route::patch('/members/{member}', [MembersController::class, 'update'])->name('members.update');
+    Route::delete('/members/{member}', [MembersController::class, 'destroy'])->name('members.destroy');
+    Route::post('/members/sms', [MembersController::class, 'sendSms'])->name('members.sms');
     Route::get('/contributions', [ContributionsController::class, 'index'])->name('contributions');
     Route::post('/contributions', [ContributionsController::class, 'store'])->name('contributions.store');
     Route::get('/loans', [LoansController::class, 'index'])->name('loans');

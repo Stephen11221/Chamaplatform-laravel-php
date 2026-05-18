@@ -34,11 +34,14 @@ class PaymentsController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $showPaymentModal = request()->boolean('make_payment') || optional(session('errors'))->any();
+
         return view('pages.payments.index', [
             'payments' => $payments,
             'members' => $members,
             'isTreasuryStaff' => $isTreasuryStaff,
             'payableLoans' => $payableLoans,
+            'showPaymentModal' => $showPaymentModal,
         ]);
     }
 
@@ -47,13 +50,17 @@ class PaymentsController extends Controller
         $role = strtolower(Auth::user()->role?->role_name ?? 'member');
         $isTreasuryStaff = in_array($role, ['admin', 'treasurer'], true);
 
+        $allowedCategories = $isTreasuryStaff
+            ? ['contribution', 'loan_repayment', 'loan_disbursement', 'investment', 'expense']
+            : ['contribution', 'loan_repayment', 'investment'];
+
         $data = $request->validate([
-            'payment_type' => [$isTreasuryStaff ? 'required' : 'nullable', Rule::in(['inbound', 'outbound'])],
-            'category' => ['required', Rule::in(['contribution', 'loan_repayment', 'loan_disbursement', 'investment', 'expense'])],
-            'user_id' => [$isTreasuryStaff ? 'nullable' : 'prohibited', 'integer', 'exists:users,id'],
+            'payment_type' => [$isTreasuryStaff ? 'required' : 'nullable', 'nullable', Rule::in(['inbound', 'outbound'])],
+            'category' => ['required', Rule::in($allowedCategories)],
+            'user_id' => [$isTreasuryStaff ? 'nullable' : 'prohibited', 'nullable', 'integer', 'exists:users,id'],
             'loan_id' => $isTreasuryStaff
                 ? ['nullable', 'integer', 'exists:loans,id']
-                : ['required_if:category,loan_repayment', 'integer', Rule::exists('loans', 'id')->where(fn ($query) => $query
+                : ['required_if:category,loan_repayment', 'nullable', 'integer', Rule::exists('loans', 'id')->where(fn ($query) => $query
                     ->where('user_id', Auth::id())
                     ->where('approval_status', 'approved')
                     ->where('repayment_status', 'active'))],
@@ -61,7 +68,7 @@ class PaymentsController extends Controller
             'payment_method' => ['required', Rule::in(['mpesa', 'bank', 'card', 'cash'])],
             'reference_number' => ['required', 'string', 'max:255', 'unique:payments,reference_number', 'unique:loan_repayments,reference_number'],
             'transaction_date' => ['required', 'date'],
-            'status' => [$isTreasuryStaff ? 'required' : 'nullable', Rule::in(['pending', 'completed', 'failed'])],
+            'status' => [$isTreasuryStaff ? 'required' : 'nullable', 'nullable', Rule::in(['pending', 'completed', 'failed'])],
             'notes' => ['nullable', 'string'],
         ]);
 

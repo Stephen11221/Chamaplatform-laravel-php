@@ -1,7 +1,7 @@
 <x-app-layout>
     <div
         x-data="{
-            recordPayment: @json($errors->any() && ! request()->boolean('make_payment')),
+            recordPayment: @json($showPaymentModal),
             paymentCategory: @json(old('category', '')),
         }"
         class="space-y-8"
@@ -26,86 +26,6 @@
                 </x-button>
             </div>
         </section>
-
-        @if (request()->boolean('make_payment') && ! $isTreasuryStaff)
-            <section class="premium-card-muted p-6">
-                <div class="mb-6">
-                    <p class="section-label">Make payment</p>
-                    <p class="mt-2 text-sm text-slate-600">Fill this form to submit a member payment for reconciliation.</p>
-                </div>
-                <form method="POST" action="{{ route('payments.store') }}" class="grid gap-5 sm:grid-cols-2">
-                    @csrf
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Category</label>
-                        <select name="category" class="premium-select" required>
-                            <option value="">Select category</option>
-                            <option value="contribution" {{ old('category') === 'contribution' ? 'selected' : '' }}>Contribution</option>
-                            <option value="loan_repayment" {{ old('category') === 'loan_repayment' ? 'selected' : '' }}>Loan repayment</option>
-                            <option value="investment" {{ old('category') === 'investment' ? 'selected' : '' }}>Investment</option>
-                        </select>
-                        @error('category')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Approved loan</label>
-                        <select name="loan_id" class="premium-select">
-                            <option value="">Only required for loan repayment</option>
-                            @foreach ($payableLoans as $loan)
-                                <option value="{{ $loan->id }}" {{ (string) old('loan_id') === (string) $loan->id ? 'selected' : '' }}>
-                                    KES {{ number_format((float) $loan->loan_amount, 2) }} - {{ $loan->purpose }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('loan_id')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Amount</label>
-                        <input type="number" name="amount" min="1" step="0.01" value="{{ old('amount') }}" class="premium-input" placeholder="Enter amount" required />
-                        @error('amount')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Channel</label>
-                        <select name="payment_method" class="premium-select" required>
-                            <option value="">Select channel</option>
-                            <option value="cash" {{ old('payment_method') === 'cash' ? 'selected' : '' }}>Cash</option>
-                            <option value="mpesa" {{ old('payment_method') === 'mpesa' ? 'selected' : '' }}>M-Pesa</option>
-                            <option value="bank" {{ old('payment_method') === 'bank' ? 'selected' : '' }}>Bank</option>
-                            <option value="card" {{ old('payment_method') === 'card' ? 'selected' : '' }}>Card</option>
-                        </select>
-                        @error('payment_method')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Transaction date</label>
-                        <input type="date" name="transaction_date" value="{{ old('transaction_date', now()->toDateString()) }}" class="premium-input" required />
-                        @error('transaction_date')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Reference</label>
-                        <input type="text" name="reference_number" value="{{ old('reference_number') }}" class="premium-input" placeholder="Enter reference" required />
-                        @error('reference_number')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Notes</label>
-                        <textarea name="notes" rows="4" class="premium-input" placeholder="Optional payment notes">{{ old('notes') }}</textarea>
-                    </div>
-                    <div class="flex flex-wrap justify-end gap-3 sm:col-span-2">
-                        <x-button href="{{ route('dashboard') }}" variant="secondary">Cancel</x-button>
-                        <x-button type="submit">Submit payment</x-button>
-                    </div>
-                </form>
-            </section>
-        @endif
 
         <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             <x-stat-card title="Today" value="KES {{ number_format($payments->filter(fn ($payment) => optional($payment->transaction_date)->isSameDay(now()))->sum(fn ($payment) => (float) $payment->amount), 2) }}" subtitle="Payments recorded today" icon="fa-money-bill-transfer" tone="emerald" />
@@ -168,6 +88,12 @@
         </section>
 
         <x-modal open="recordPayment" title="{{ $isTreasuryStaff ? 'Create payment' : 'Make payment' }}" maxWidth="2xl">
+            @if ($errors->any())
+                <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                    {{ $errors->first() }}
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('payments.store') }}" class="grid gap-5 sm:grid-cols-2">
                 @csrf
                 @if ($isTreasuryStaff)
@@ -181,6 +107,9 @@
                                 </option>
                             @endforeach
                         </select>
+                        @error('user_id')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700">Payment type</label>
@@ -188,6 +117,9 @@
                             <option value="inbound" {{ old('payment_type') === 'inbound' ? 'selected' : '' }}>Inbound</option>
                             <option value="outbound" {{ old('payment_type') === 'outbound' ? 'selected' : '' }}>Outbound</option>
                         </select>
+                        @error('payment_type')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 @endif
                 <div>
@@ -292,6 +224,9 @@
                             <option value="completed" {{ old('status') === 'completed' ? 'selected' : '' }}>Completed</option>
                             <option value="failed" {{ old('status') === 'failed' ? 'selected' : '' }}>Failed</option>
                         </select>
+                        @error('status')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 @endif
                 <div class="sm:col-span-2">
