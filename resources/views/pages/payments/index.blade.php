@@ -3,6 +3,7 @@
         x-data="{
             recordPayment: @json($showPaymentModal),
             paymentCategory: @json(old('category', '')),
+            editMpesa: false,
         }"
         class="space-y-8"
     >
@@ -26,6 +27,21 @@
                 </x-button>
             </div>
         </section>
+
+        @if ($mpesaPaybill)
+            <section class="rounded-3xl border border-emerald-200 bg-emerald-50 px-6 py-5">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">M-Pesa Payment Details</p>
+                        <p class="mt-3 text-lg font-semibold text-slate-900">{{ $mpesaPaybill }}</p>
+                        <p class="mt-1 text-sm text-emerald-600">{{ $mpesaAccountName }}</p>
+                    </div>
+                    @if ($isTreasuryStaff)
+                        <x-button icon="fa-pen-to-square" variant="secondary" x-on:click="editMpesa = true">Edit M-Pesa</x-button>
+                    @endif
+                </div>
+            </section>
+        @endif
 
         <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             <x-stat-card title="Today" value="KES {{ number_format($payments->filter(fn ($payment) => optional($payment->transaction_date)->isSameDay(now()))->sum(fn ($payment) => (float) $payment->amount), 2) }}" subtitle="Payments recorded today" icon="fa-money-bill-transfer" tone="emerald" />
@@ -239,5 +255,31 @@
                 </div>
             </form>
         </x-modal>
+
+        @if ($isTreasuryStaff)
+            <x-modal open="editMpesa" title="Update M-Pesa Details" maxWidth="md">
+                <form method="POST" action="{{ route('payments.update-mpesa-paybill') }}" class="space-y-5">
+                    @csrf
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Paybill Number</label>
+                        <input type="text" name="mpesa_paybill" value="{{ old('mpesa_paybill', $mpesaPaybill) }}" class="premium-input" placeholder="e.g., 123456" required />
+                        @error('mpesa_paybill')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Account Name</label>
+                        <input type="text" name="mpesa_account_name" value="{{ old('mpesa_account_name', $mpesaAccountName) }}" class="premium-input" placeholder="e.g., CHAMA GROUP" required />
+                        @error('mpesa_account_name')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div class="flex flex-wrap justify-end gap-3">
+                        <x-button variant="secondary" type="button" x-on:click="editMpesa = false">Cancel</x-button>
+                        <x-button type="submit">Update Details</x-button>
+                    </div>
+                </form>
+            </x-modal>
+        @endif
     </div>
 </x-app-layout>

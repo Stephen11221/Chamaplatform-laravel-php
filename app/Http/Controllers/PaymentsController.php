@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChamaSetting;
 use App\Models\Loan;
 use App\Models\LoanRepayment;
 use App\Models\Payment;
@@ -35,6 +36,7 @@ class PaymentsController extends Controller
             ->get();
 
         $showPaymentModal = request()->boolean('make_payment') || optional(session('errors'))->any();
+        $chamaSettings = ChamaSetting::getInstance();
 
         return view('pages.payments.index', [
             'payments' => $payments,
@@ -42,6 +44,8 @@ class PaymentsController extends Controller
             'isTreasuryStaff' => $isTreasuryStaff,
             'payableLoans' => $payableLoans,
             'showPaymentModal' => $showPaymentModal,
+            'mpesaPaybill' => $chamaSettings->mpesa_paybill,
+            'mpesaAccountName' => $chamaSettings->mpesa_account_name,
         ]);
     }
 
@@ -109,5 +113,20 @@ class PaymentsController extends Controller
         });
 
         return back()->with('success', 'Payment submitted successfully.');
+    }
+
+    public function updateMpesaPaybill(Request $request): RedirectResponse
+    {
+        abort_unless(in_array(strtolower(Auth::user()->role?->role_name ?? ''), ['admin', 'treasurer'], true), 403);
+
+        $data = $request->validate([
+            'mpesa_paybill' => ['required', 'string', 'max:20'],
+            'mpesa_account_name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $settings = ChamaSetting::getInstance();
+        $settings->update($data);
+
+        return back()->with('success', 'M-Pesa details updated successfully.');
     }
 }

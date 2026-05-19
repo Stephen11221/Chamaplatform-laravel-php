@@ -38,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/meetings/{meeting}/reply', [MeetingsController::class, 'reply'])->name('meetings.reply');
     Route::get('/payments', [PaymentsController::class, 'index'])->name('payments');
     Route::post('/payments', [PaymentsController::class, 'store'])->name('payments.store');
+    Route::post('/payments/mpesa-paybill', [PaymentsController::class, 'updateMpesaPaybill'])->name('payments.update-mpesa-paybill');
     Route::view('/settings', 'pages.settings.index')->name('settings');
     Route::view('/notifications', 'pages.notifications.index')->name('notifications');
     Route::view('/audit', 'pages.audit.index')->name('audit');
