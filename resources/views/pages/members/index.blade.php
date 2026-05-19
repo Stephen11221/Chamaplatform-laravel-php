@@ -1,31 +1,36 @@
 <x-app-layout>
-    <div x-data="{
-        openCreateModal: false,
-        openEditModal: false,
-        openSmsModal: false,
-        selectAll: false,
-        selectedMembers: [],
-        smsMessage: '',
-        editingMember: {
-            id: null,
-            full_name: '',
-            national_id: '',
-            email: '',
-            phone_number: '',
-            role: 'Member',
-            location: '',
-            status: 'active',
-        },
-        membersData: JSON.parse('@json($membersData)'),
-        openEdit(memberId) {
-            const member = this.membersData.find((item) => item.id === memberId);
-            if (! member) {
-                return;
+    <div x-data="memberData()" class="space-y-8">
+        <script>
+            function memberData() {
+                return {
+                    openCreateModal: false,
+                    openEditModal: false,
+                    openSmsModal: false,
+                    selectAll: false,
+                    selectedMembers: [],
+                    smsMessage: '',
+                    editingMember: {
+                        id: null,
+                        full_name: '',
+                        national_id: '',
+                        email: '',
+                        phone_number: '',
+                        role: 'Member',
+                        location: '',
+                        status: 'active',
+                    },
+                    membersData: @json($membersData),
+                    openEdit(memberId) {
+                        const member = this.membersData.find((item) => item.id === memberId);
+                        if (!member) {
+                            return;
+                        }
+                        this.editingMember = { ...member };
+                        this.openEditModal = true;
+                    },
+                };
             }
-            this.editingMember = { ...member };
-            this.openEditModal = true;
-        },
-    }" class="space-y-8">
+        </script>
         <section class="premium-card px-6 py-8 lg:px-8">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div class="max-w-3xl space-y-3">

@@ -29,23 +29,97 @@
 
         <section class="grid gap-6 xl:grid-cols-2">
             <x-chart-card title="Monthly collection" subtitle="Contributions by month">
-                <div class="flex h-[300px] items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 text-center">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-900">Live contribution data</p>
-                        <p class="mt-1 text-sm text-slate-500">Hook in charting later if you want trends here.</p>
-                    </div>
-                </div>
+                <canvas id="monthlyChart" class="max-h-[300px]"></canvas>
             </x-chart-card>
 
             <x-chart-card title="Collection trend" subtitle="Payment volume over time">
-                <div class="flex h-[300px] items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 text-center">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-900">Live contribution data</p>
-                        <p class="mt-1 text-sm text-slate-500">This space can host the graph later.</p>
-                    </div>
-                </div>
+                <canvas id="trendChart" class="max-h-[300px]"></canvas>
             </x-chart-card>
         </section>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const monthlyCtx = document.getElementById('monthlyChart')?.getContext('2d');
+                const trendCtx = document.getElementById('trendChart')?.getContext('2d');
+
+                if (monthlyCtx) {
+                    const monthlyData = @json($monthlyData);
+                    new Chart(monthlyCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: monthlyData.map(d => d.month),
+                            datasets: [{
+                                label: 'Contributions',
+                                data: monthlyData.map(d => d.count),
+                                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                borderWidth: 2,
+                                borderRadius: 8,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: false,
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1,
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (trendCtx) {
+                    const trendData = @json($trendData);
+                    new Chart(trendCtx, {
+                        type: 'line',
+                        data: {
+                            labels: trendData.map(d => d.month),
+                            datasets: [{
+                                label: 'Payment Volume (KES)',
+                                data: trendData.map(d => d.amount),
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: false,
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return 'KES ' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        </script>
 
         <x-table-card title="Contribution table" subtitle="Latest contribution records">
             <table class="premium-table">

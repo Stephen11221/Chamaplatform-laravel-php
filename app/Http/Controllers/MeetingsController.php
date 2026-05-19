@@ -33,12 +33,13 @@ class MeetingsController extends Controller
             'meetings' => $meetings,
             'selectedMeeting' => $selectedMeeting,
             'isAdmin' => $this->isAdmin(),
+            'canCreateMeeting' => $this->isAdmin() || $this->isSecretary(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $this->ensureAdmin();
+        $this->ensureCanCreateMeeting();
 
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -97,8 +98,13 @@ class MeetingsController extends Controller
         return strtolower(Auth::user()->role?->role_name ?? '') === 'admin';
     }
 
-    private function ensureAdmin(): void
+    private function isSecretary(): bool
     {
-        abort_unless($this->isAdmin(), 403);
+        return strtolower(Auth::user()->role?->role_name ?? '') === 'secretary';
+    }
+
+    private function ensureCanCreateMeeting(): void
+    {
+        abort_unless($this->isAdmin() || $this->isSecretary(), 403);
     }
 }

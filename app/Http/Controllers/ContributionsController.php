@@ -27,11 +27,57 @@ class ContributionsController extends Controller
             ->orderBy('full_name')
             ->get();
 
+        // Get monthly contribution data
+        $monthlyData = $this->getMonthlyContributionData();
+        $trendData = $this->getContributionTrendData();
+
         return view('pages.contributions.index', [
             'contributions' => $contributions,
             'members' => $members,
             'isTreasuryStaff' => in_array($role, ['admin', 'treasurer'], true),
+            'monthlyData' => $monthlyData,
+            'trendData' => $trendData,
         ]);
+    }
+
+    private function getMonthlyContributionData(): array
+    {
+        $last12Months = collect(range(11, 0))->map(function ($i) {
+            return now()->subMonths($i)->startOfMonth();
+        });
+
+        $data = [];
+        foreach ($last12Months as $month) {
+            $count = Contribution::whereYear('payment_date', $month->year)
+                ->whereMonth('payment_date', $month->month)
+                ->count();
+            $data[] = [
+                'month' => $month->format('M Y'),
+                'count' => $count,
+            ];
+        }
+
+        return $data;
+    }
+
+    private function getContributionTrendData(): array
+    {
+        $last12Months = collect(range(11, 0))->map(function ($i) {
+            return now()->subMonths($i)->startOfMonth();
+        });
+
+        $data = [];
+        foreach ($last12Months as $month) {
+            $total = Contribution::whereYear('payment_date', $month->year)
+                ->whereMonth('payment_date', $month->month)
+                ->sum('amount');
+            $data[] = [
+                'month' => $month->format('M Y'),
+                'amount' => (float) $total,
+            ];
+        }
+
+        return $data;
     }
 
     public function store(Request $request): RedirectResponse

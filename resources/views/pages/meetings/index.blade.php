@@ -10,7 +10,7 @@
                     </p>
                 </div>
 
-                @if ($isAdmin)
+                @if ($canCreateMeeting)
                     <x-button icon="fa-calendar-plus" x-on:click="createMeeting = true">Create meeting</x-button>
                 @endif
             </div>
@@ -178,7 +178,7 @@
             </div>
         </section>
 
-        @if ($isAdmin)
+        @if ($canCreateMeeting)
             <x-modal open="createMeeting" title="Create a meeting" maxWidth="2xl">
                 <form method="POST" action="{{ route('meetings.store') }}" class="grid gap-5 sm:grid-cols-2">
                     @csrf
