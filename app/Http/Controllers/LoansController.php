@@ -122,6 +122,12 @@ class LoansController extends Controller
             'recorded_by' => Auth::id(),
         ]);
 
+        // Increment the loan's payments_made counter. This tracks how many
+        // scheduled payments have been recorded/verified.
+        if ($repayment->loan) {
+            $repayment->loan->increment('payments_made');
+        }
+
         Payment::where('reference_number', $repayment->reference_number)
             ->where('category', 'loan_repayment')
             ->update(['status' => 'completed', 'recorded_by' => Auth::id()]);
@@ -130,8 +136,14 @@ class LoansController extends Controller
             ->where('status', 'completed')
             ->sum('amount_paid');
 
-        if ($repayment->loan && $completedTotal >= (float) $repayment->loan->total_repayable) {
-            $repayment->loan->update(['repayment_status' => 'completed']);
+        // Mark loan completed either when total repaid >= total_repayable
+        // OR when the recorded payments reach the originally scheduled count.
+        if ($repayment->loan) {
+            $loan = $repayment->loan->fresh();
+
+            if ($completedTotal >= (float) $loan->total_repayable || ($loan->payments_made ?? 0) >= (int) $loan->duration_months) {
+                $loan->update(['repayment_status' => 'completed']);
+            }
         }
 
         return redirect()->route('loans')->with('success', 'Cash loan repayment verified.');

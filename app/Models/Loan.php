@@ -18,6 +18,7 @@ class Loan extends Model
         'total_repayable',
         'monthly_payment',
         'duration_months',
+        'payments_made',
         'purpose',
         'approval_status',
         'repayment_status',
@@ -36,6 +37,7 @@ class Loan extends Model
         'approval_date' => 'date',
         'disbursement_date' => 'date',
         'maturity_date' => 'date',
+        'payments_made' => 'integer',
     ];
 
     public function borrower()

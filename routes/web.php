@@ -39,6 +39,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/payments', [PaymentsController::class, 'index'])->name('payments');
     Route::post('/payments', [PaymentsController::class, 'store'])->name('payments.store');
     Route::post('/payments/mpesa-paybill', [PaymentsController::class, 'updateMpesaPaybill'])->name('payments.update-mpesa-paybill');
+    Route::get('/payments/manage', [PaymentsController::class, 'manage'])->name('payments.manage');
+    Route::get('/payments/{payment}/edit', [PaymentsController::class, 'edit'])->name('payments.edit');
+    Route::patch('/payments/{payment}', [PaymentsController::class, 'update'])->name('payments.update');
     Route::view('/settings', 'pages.settings.index')->name('settings');
     Route::view('/notifications', 'pages.notifications.index')->name('notifications');
     Route::view('/audit', 'pages.audit.index')->name('audit');

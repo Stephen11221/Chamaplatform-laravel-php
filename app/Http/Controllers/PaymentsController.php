@@ -129,4 +129,66 @@ class PaymentsController extends Controller
 
         return back()->with('success', 'M-Pesa details updated successfully.');
     }
+
+    public function manage(): View
+    {
+        abort_unless(in_array(strtolower(Auth::user()->role?->role_name ?? ''), ['admin', 'treasurer'], true), 403);
+
+        $payments = Payment::with(['member', 'recorder'])->orderByDesc('transaction_date')->orderByDesc('created_at')->get();
+        $chamaSettings = ChamaSetting::getInstance();
+        $members = User::orderBy('full_name')->get();
+
+        return view('pages.payments.manage', [
+            'payments' => $payments,
+            'mpesaPaybill' => $chamaSettings->mpesa_paybill,
+            'mpesaAccountName' => $chamaSettings->mpesa_account_name,
+            'members' => $members,
+        ]);
+    }
+
+    public function edit(Payment $payment): View
+    {
+        abort_unless(in_array(strtolower(Auth::user()->role?->role_name ?? ''), ['admin', 'treasurer'], true), 403);
+
+        $payment->load(['member']);
+        $members = User::orderBy('full_name')->get();
+
+        return view('pages.payments.edit', [
+            'payment' => $payment,
+            'members' => $members,
+        ]);
+    }
+
+    public function update(Request $request, Payment $payment): RedirectResponse
+    {
+        abort_unless(in_array(strtolower(Auth::user()->role?->role_name ?? ''), ['admin', 'treasurer'], true), 403);
+
+        $data = $request->validate([
+            'payment_type' => ['required', Rule::in(['inbound', 'outbound'])],
+            'category' => ['required', Rule::in(['contribution', 'loan_repayment', 'loan_disbursement', 'investment', 'expense'])],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'amount' => ['required', 'numeric', 'min:1'],
+            'payment_method' => ['required', Rule::in(['mpesa', 'bank', 'card', 'cash'])],
+            'reference_number' => ['required', 'string', 'max:255', Rule::unique('payments', 'reference_number')->ignore($payment->id)],
+            'transaction_date' => ['required', 'date'],
+            'status' => ['required', Rule::in(['pending', 'completed', 'failed'])],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $payment->fill([
+            'payment_type' => $data['payment_type'],
+            'category' => $data['category'],
+            'user_id' => $data['user_id'] ?? null,
+            'amount' => $data['amount'],
+            'payment_method' => $data['payment_method'],
+            'reference_number' => $data['reference_number'],
+            'transaction_date' => $data['transaction_date'],
+            'status' => $data['status'],
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        $payment->save();
+
+        return redirect()->route('payments.manage')->with('success', 'Payment updated successfully.');
+    }
 }

@@ -1,9 +1,9 @@
 <x-app-layout>
     <div
         x-data="{
-            recordPayment: @json($showPaymentModal),
-            paymentCategory: @json(old('category', '')),
-            editMpesa: false,
+            recordPayment: {{ $showPaymentModal ? 'true' : 'false' }},
+            paymentCategory: '{{ old('category', '') }}',
+            editMpesa: false
         }"
         class="space-y-8"
     >
