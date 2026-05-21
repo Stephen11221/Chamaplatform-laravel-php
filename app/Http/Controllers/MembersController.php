@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Loan;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -25,6 +26,12 @@ class MembersController extends Controller
         $leaderCount = $members->whereIn('role.role_name', ['Admin', 'Treasurer', 'Secretary'])->count();
         $adminCount = $members->where('role.role_name', 'Admin')->count();
 
+        $activeLoans = Loan::whereIn('user_id', $members->pluck('id'))
+            ->where('approval_status', 'approved')
+            ->where('repayment_status', 'active')
+            ->get()
+            ->groupBy('user_id');
+
         $membersData = $members->map(fn ($member) => [
             'id' => $member->id,
             'full_name' => $member->full_name,
@@ -34,6 +41,14 @@ class MembersController extends Controller
             'role' => $member->role?->role_name ?? 'Member',
             'location' => $member->location,
             'status' => $member->status,
+            'active_loans_count' => $activeLoans->has($member->id) ? $activeLoans->get($member->id)->count() : 0,
+            'active_loans' => $activeLoans->has($member->id)
+                ? $activeLoans->get($member->id)->map(fn ($loan) => [
+                    'id' => $loan->id,
+                    'purpose' => $loan->purpose,
+                    'loan_amount' => number_format((float) $loan->loan_amount, 2),
+                ])->all()
+                : [],
         ])->all();
 
         return view('pages.members.index', compact('members', 'roles', 'totalMembers', 'activeMembers', 'leaderCount', 'adminCount', 'membersData'));

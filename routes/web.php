@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditController;
 use App\Http\Controllers\MembersController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
@@ -44,7 +45,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/payments/{payment}', [PaymentsController::class, 'update'])->name('payments.update');
     Route::view('/settings', 'pages.settings.index')->name('settings');
     Route::view('/notifications', 'pages.notifications.index')->name('notifications');
-    Route::view('/audit', 'pages.audit.index')->name('audit');
+    Route::get('/audit', [AuditController::class, 'index'])->name('audit');
+    Route::post('/audit', [AuditController::class, 'store'])->name('audit.store');
 
     Route::view('/profile', 'pages.profile.index')->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

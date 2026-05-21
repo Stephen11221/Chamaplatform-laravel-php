@@ -6,9 +6,17 @@
                     openCreateModal: false,
                     openEditModal: false,
                     openSmsModal: false,
-                    selectAll: false,
+                    loanDeductionOpen: false,
                     selectedMembers: [],
+                    selectAll: false,
                     smsMessage: '',
+                    deductMember: null,
+                    deductLoanId: null,
+                    deductAmount: null,
+                    deductPaymentMethod: 'cash',
+                    deductReference: '',
+                    deductTransactionDate: '{{ now()->toDateString() }}',
+                    deductStatus: 'completed',
                     editingMember: {
                         id: null,
                         full_name: '',
@@ -27,6 +35,19 @@
                         }
                         this.editingMember = { ...member };
                         this.openEditModal = true;
+                    },
+                    openLoanDeduction(memberId) {
+                        const member = this.membersData.find((item) => item.id === memberId);
+                        if (!member || member.active_loans_count === 0) {
+                            return;
+                        }
+                        this.deductMember = member;
+                        this.deductLoanId = member.active_loans[0]?.id || null;
+                        this.deductAmount = null;
+                        this.deductPaymentMethod = 'cash';
+                        this.deductReference = '';
+                        this.deductStatus = 'completed';
+                        this.loanDeductionOpen = true;
                     },
                 };
             }
@@ -112,6 +133,7 @@
                             <th class="px-6 py-4 font-semibold">Role</th>
                             <th class="px-6 py-4 font-semibold">Location</th>
                             <th class="px-6 py-4 font-semibold">Status</th>
+                            <th class="px-6 py-4 font-semibold">Active loans</th>
                             <th class="px-6 py-4 font-semibold">Joined</th>
                             <th class="px-6 py-4 font-semibold">Actions</th>
                         </tr>
@@ -136,16 +158,30 @@
                                 <td class="px-6 py-4 text-slate-700">{{ $member->email }}</td>
                                 <td class="px-6 py-4 text-slate-700">{{ $member->phone_number }}</td>
                                 <td class="px-6 py-4 text-slate-700">{{ $member->role?->role_name ?? 'Member' }}</td>
-                                <td class="px-6 py-4 text-slate-700">{{ $member->location ?? '—' }}</td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 text-slate-700">
                                     <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                                         {{ ucfirst($member->status) }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-slate-700">
+                                    <span class="inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700" x-text="membersData.find(item => item.id === {{ $member->id }})?.active_loans_count ?? 0">
+                                        0
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-slate-700">{{ $member->created_at->format('M d, Y') }}</td>
                                 <td class="px-6 py-4">
                                     <div class="flex flex-wrap gap-2">
                                         <button type="button" x-on:click="openEdit({{ $member->id }})" class="rounded-3xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">Edit</button>
+                                        @if(in_array(Auth::user()->role?->role_name, ['Admin', 'Treasurer'], true))
+                                            <button
+                                                type="button"
+                                                x-on:click="openLoanDeduction({{ $member->id }})"
+                                                class="rounded-3xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+                                                x-bind:disabled="!membersData.find(item => item.id === {{ $member->id }})?.active_loans_count"
+                                            >
+                                                Loan deduction
+                                            </button>
+                                        @endif
                                         <form method="POST" action="{{ route('members.destroy', $member) }}" onsubmit="return confirm('Are you sure you want to delete this member?');">
                                             @csrf
                                             @method('DELETE')
@@ -156,13 +192,81 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-6 py-10 text-center text-sm text-slate-500">No members have been added yet.</td>
+                                <td colspan="10" class="px-6 py-10 text-center text-sm text-slate-500">No members have been added yet.</td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </section>
+
+        <x-modal open="loanDeductionOpen" title="Record loan deduction" maxWidth="2xl">
+            <form method="POST" action="{{ route('payments.store') }}" class="grid gap-5 sm:grid-cols-2">
+                @csrf
+                <input type="hidden" name="payment_type" value="inbound" />
+                <input type="hidden" name="category" value="loan_repayment" />
+                <input type="hidden" name="user_id" x-bind:value="deductMember?.id" />
+
+                <div class="sm:col-span-2">
+                    <p class="text-sm font-semibold text-slate-900">Member</p>
+                    <p class="mt-1 text-sm text-slate-500" x-text="deductMember ? deductMember.full_name : 'Select a member first'">Member name</p>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Loan</label>
+                    <select name="loan_id" class="premium-select" x-model="deductLoanId" required>
+                        <option value="">Select active loan</option>
+                        <template x-for="loan in deductMember?.active_loans ?? []" :key="loan.id">
+                            <option x-bind:value="loan.id" x-text="`KES ${loan.loan_amount} - ${loan.purpose}`"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Amount</label>
+                    <input type="number" name="amount" min="1" step="0.01" x-model="deductAmount" class="premium-input" placeholder="Enter deduction amount" required />
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Channel</label>
+                    <select name="payment_method" class="premium-select" x-model="deductPaymentMethod" required>
+                        <option value="cash">Cash</option>
+                        <option value="mpesa">M-Pesa</option>
+                        <option value="bank">Bank</option>
+                        <option value="card">Card</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Status</label>
+                    <select name="status" class="premium-select" x-model="deductStatus" required>
+                        <option value="completed">Completed</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Transaction date</label>
+                    <input type="date" name="transaction_date" x-model="deductTransactionDate" class="premium-input" required />
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Reference</label>
+                    <input type="text" name="reference_number" x-model="deductReference" class="premium-input" placeholder="Enter reference" required />
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="mb-2 block text-sm font-semibold text-slate-700">Notes</label>
+                    <textarea name="notes" rows="4" class="premium-input" placeholder="Optional notes"></textarea>
+                </div>
+
+                <div class="flex flex-wrap justify-end gap-3 sm:col-span-2">
+                    <x-button variant="secondary" type="button" x-on:click="loanDeductionOpen = false">Cancel</x-button>
+                    <x-button type="submit" x-bind:disabled="!deductMember || !deductLoanId || !deductAmount">Record deduction</x-button>
+                </div>
+            </form>
+        </x-modal>
 
         @if(Auth::user()->role?->role_name === 'Admin')
         <x-modal open="openCreateModal" title="Create member account" maxWidth="2xl">
